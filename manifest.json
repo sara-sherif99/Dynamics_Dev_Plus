@@ -1,0 +1,36 @@
+{
+    "manifest_version": 3,
+    "name": "D365 Extension",
+    "version": "1.0",
+    "description": "Performs quick actions in Dynamics 365",
+    "permissions": [
+        "scripting",
+        "activeTab"
+    ],
+    "host_permissions": [
+        "*://*.dynamics.com/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": "icon.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "getBPFStagesIDs.js",
+                "getProcessesSessions.js",
+                "getRelatedReports.js",
+                "lookForFieldOnForm.js",
+                "goToEntityList.js",
+                "cloneFieldsFromAnotherRecord.js",
+                "duplicaterecord.js",
+                "showFieldMetadata.js",
+                "showSecurityRoles.js",
+                "showTabsOnForm.js"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}
