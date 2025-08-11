@@ -13,15 +13,37 @@
         alert("❌ Xrm never became available. Make sure you're on a record form.");
     }
 })();
-function goToEntityList(entityschemaname, mode) {
+
+async function goToEntityList(entityschemaname, mode) {
     if (mode == "uci") {
-        var targetUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl() + `&newWindow=true&pagetype=entitylist&etn=${entityschemaname}`
+        var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
+        if (!baseUrl.includes("appid")) {
+            baseUrl += `/main.aspx?appid=${await GetAnyAppID()}`;
+        } 
+        var targetUrl = baseUrl + `&newWindow=true&pagetype=entitylist&etn=${entityschemaname}`
         window.open(targetUrl, "_blank");
     } else if (mode == "classic") {
         var targetUrl = Xrm.Page.context.getClientUrl() + `/main.aspx?pagetype=entitylist&etn=${entityschemaname}`
         window.open(targetUrl, "_blank");
     }
 }
+
+async function GetAnyAppID() {
+    var appid;
+    await Xrm.WebApi.retrieveMultipleRecords("appmodule", "?$filter=statecode eq 0 and navigationtype eq 0 and clienttype eq 4 and appmoduleid ne null and name ne null")
+        .then(function (result) {
+            if (result.entities && result.entities.length > 0) {
+                appid = result.entities[0].appmoduleid;
+            } else {
+                appid = null;
+            }
+        })
+        .catch(function (error) {
+            console.error("Error retrieving app modules:", error.message);
+        });
+    return appid;
+}
+
 function showOverlayWithInput(promptMsg, onConfirm) {
     const existingBox = document.getElementById("d365-overlay-box");
     const existingBackdrop = document.getElementById("d365-overlay-backdrop");
@@ -132,7 +154,7 @@ function showOverlayWithInput(promptMsg, onConfirm) {
         borderRadius: "4px",
         cursor: "pointer"
     });
-    const isOnPremises  =Xrm.Utility.getGlobalContext().isOnPremises();
+    const isOnPremises = Xrm.Utility.getGlobalContext().isOnPremises();
     if (isOnPremises == false) {
         classicBtn.disabled = true;
         classicBtn.style.backgroundColor = "#999";

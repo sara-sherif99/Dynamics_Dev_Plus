@@ -1,6 +1,7 @@
 (async function waitForXrm(attempts = 10) {
   if (typeof Xrm !== "undefined" && Xrm.Page && Xrm.Page.getAttribute) {
     try {
+      Xrm = getXRM();
       if (Xrm.Page.data) {
         var processId = Xrm.Page.data.process.getActiveProcess()?.getId();
         if (processId) {
@@ -20,6 +21,25 @@
     alert("❌ Make sure you're on a record form.");
   }
 })();
+
+function getXRM() {
+    if (isUCI()) {
+        return window.Xrm;
+    }
+    else {
+        return $("iframe").filter(function () {
+            return $(this).css("visibility") == "visible"
+        })[0].contentWindow.Xrm;
+    }
+}
+
+function isUCI() {
+    var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
+    if (baseUrl.includes("appid"))
+        return true;
+    else
+        false;
+}
 
 function getBPFStages(processId) {
   const result = Xrm.WebApi.retrieveMultipleRecords("processstage", `?$filter=processid/workflowid eq ${processId}&$select=stagename`).then(

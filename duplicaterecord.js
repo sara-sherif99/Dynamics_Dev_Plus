@@ -1,6 +1,7 @@
 (async function waitForXrm(attempts = 10) {
     if (typeof Xrm !== "undefined" && Xrm.Page && Xrm.Page.getAttribute) {
         try {
+            Xrm = getXRM();
             if (Xrm.Page.data) {
                 showOverlay(duplicateRecord);
             }
@@ -17,6 +18,25 @@
     }
 })();
 
+function getXRM() {
+    if (isUCI()) {
+        return window.Xrm;
+    }
+    else {
+        return $("iframe").filter(function () {
+            return $(this).css("visibility") == "visible"
+        })[0].contentWindow.Xrm;
+    }
+}
+
+function isUCI() {
+    var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
+    if (baseUrl.includes("appid"))
+        return true;
+    else
+        false;
+}
+
 function duplicateRecord() {
     var formContext = Xrm.Page;
     var entityName = formContext.data.entity.getEntityName();
@@ -25,16 +45,22 @@ function duplicateRecord() {
     var attributes = formContext.data.entity.attributes.get();
     var formParameters = {};
 
-    attributes.forEach(function (attribute) {
+    attributes.forEach(async function (attribute) {
         var logicalName = attribute.getName();
         var value = attribute.getValue();
 
-        if (value !== null && !systemFields.includes(logicalName)) {
+        if (!formParameters.hasOwnProperty(logicalName) && value !== null && !systemFields.includes(logicalName)) {
             if (attribute.getAttributeType() === "lookup") {
                 var lookupValue = value[0];
                 formParameters[logicalName] = lookupValue.id;
                 formParameters[logicalName + "name"] = lookupValue.name;
-                formParameters[logicalName + "type"] = lookupValue.entityType;
+                if (isUCI())
+                    formParameters[logicalName + "type"] = lookupValue.entityType;
+                else {
+                    await Xrm.Utility.getEntityMetadata("businessunit").then(function(result){
+                        formParameters[logicalName + "type"] = result.ObjectTypeCode;
+                    });
+                }
             } else if (attribute.getAttributeType() === "boolean") {
                 formParameters[logicalName] = value ? 1 : 0;
             } else if (attribute.getAttributeType() === "datetime") {
@@ -49,10 +75,8 @@ function duplicateRecord() {
         entityName: entityName,
         openInNewWindow: true
     };
-
     Xrm.Navigation.openForm(entityFormOptions, formParameters).then(
         function (success) {
-            console.log("Form opened successfully.");
         },
         function (error) {
             console.error("Error opening form: " + error.message);

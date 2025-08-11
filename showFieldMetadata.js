@@ -1,6 +1,7 @@
 (async function waitForXrm(attempts = 10) {
     if (typeof Xrm !== "undefined" && Xrm.Page && Xrm.Page.getAttribute) {
         try {
+            Xrm = getXRM();
             if (Xrm.Page.data) {
                 var fieldsArray = GetFieldsOnForm();
                 showFieldSelectionOverlay(
@@ -22,6 +23,25 @@
     }
 })();
 
+function getXRM() {
+    if (isUCI()) {
+        return window.Xrm;
+    }
+    else {
+        return $("iframe").filter(function () {
+            return $(this).css("visibility") == "visible"
+        })[0].contentWindow.Xrm;
+    }
+}
+
+function isUCI() {
+    var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
+    if (baseUrl.includes("appid"))
+        return true;
+    else
+        false;
+}
+
 function GetFieldsOnForm() {
     const attributes = Xrm.Page.data.entity.attributes.get();
     return attributes.map(attr => ({
@@ -40,14 +60,22 @@ function GetFieldsOnForm() {
 }
 
 async function getFieldMetadata(attribute) {
-    var fieldMetaData;
     var entityName = Xrm.Page.data.entity.getEntityName();
     var schemaName = attribute.getName();
 
+    if (isUCI()) {
+        return getMetaDataInUCI(entityName, schemaName);
+    }
+    else {
+        return getMetaDataInClassic(entityName, schemaName);
+    }
+}
+
+async function getMetaDataInUCI(entityName, schemaName) {
+    var fieldMetaData;
     await Xrm.Utility.getEntityMetadata(entityName, [schemaName])
         .then(function (metadata) {
             const fieldData = metadata.Attributes.get(schemaName);
-
             const type = fieldData.attributeDescriptor.Type;
 
             const AttributeRequiredLevelCodeName = Object.entries(AttributeRRequiredLevelCode).reduce((acc, [key, value]) => {
@@ -62,7 +90,7 @@ async function getFieldMetadata(attribute) {
             fieldMetaData += `Required: ${requiredLevel}\n`;
 
             if (type === "lookup")
-                fieldMetaData += `Related Entity: ${fieldData.attributeDescriptor.EntityLogicalName}`;
+                fieldMetaData += `Related Entity: ${fieldData.Targets.join("\n")}`;
 
             else if (type === "picklist") {
                 const options = fieldData.OptionSet;
@@ -84,6 +112,75 @@ async function getFieldMetadata(attribute) {
         });
 
     return fieldMetaData;
+}
+
+async function getMetaDataInClassic(entityName, schemaName) {
+    var fieldMetaData;
+    var path = `${Xrm.Utility.getGlobalContext().getClientUrl()}/api/data/v9.1/EntityDefinitions(LogicalName='${entityName}')/Attributes(LogicalName='${schemaName}')`;
+    try {
+        var response = await fetch(path, {
+            method: "GET",
+            headers: {
+                "OData-MaxVersion": "4.0",
+                "OData-Version": "4.0",
+                "Accept": "application/json",
+                "Content-Type": "application/json; charset=utf-8"
+            }
+        });
+
+        var result = await response.json();
+        var type = result.AttributeType;
+        fieldMetaData = `Schema Name: ${result.LogicalName}\n`;
+        fieldMetaData += `Type: ${type}\n`;
+        fieldMetaData += `Required: ${result.RequiredLevel.Value}\n`;
+
+        if (type === "Lookup")
+            fieldMetaData += `Related Entity: ${result.Targets.join("\n")}`;
+
+        else if (type === "Picklist") {
+            fieldMetaData += `Options:\n`;
+            fieldMetaData += await GetOptions(entityName,schemaName,'PicklistAttributeMetadata');
+        }
+        else if (type == "Virtual") {
+            fieldMetaData += `Options:\n`;
+            fieldMetaData += await GetOptions(entityName,schemaName,'MultiSelectPicklistAttributeMetadata');
+        }
+        else if (type == "State") {
+            fieldMetaData += `Options:\n`;
+            fieldMetaData += await GetOptions(entityName,schemaName,'StateAttributeMetadata');
+        }
+        else if(type == "Status") {
+            fieldMetaData += `Options:\n`;
+            fieldMetaData += await GetOptions(entityName,schemaName,'StatusAttributeMetadata');            
+        }
+    }
+    catch (error) {
+        console.error("Error retrieving field metadata:", error);
+        throw error;
+    }
+    return fieldMetaData;
+}
+
+async function GetOptions(entityName, schemaName, fieldType) {
+    var response = await fetch(
+        `${Xrm.Utility.getGlobalContext().getClientUrl()}/api/data/v9.1/EntityDefinitions(LogicalName='${entityName}')/Attributes(LogicalName='${schemaName}')/Microsoft.Dynamics.CRM.${fieldType}?$select=LogicalName&$expand=OptionSet,GlobalOptionSet`
+        , {
+            method: "GET",
+            headers: {
+                "OData-MaxVersion": "4.0",
+                "OData-Version": "4.0",
+                "Accept": "application/json",
+                "Content-Type": "application/json; charset=utf-8"
+            }
+        });
+
+    var result = await response.json();
+    const options = result.OptionSet.Options;
+    var optionsText = "";
+    Object.values(options).forEach(opt => {
+        optionsText += `- ${opt.Label.LocalizedLabels[0].Label} (${opt.Value})\n`;
+    });
+    return optionsText;
 }
 
 async function showFieldSelectionOverlay(fieldsArray) {

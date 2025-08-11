@@ -1,5 +1,5 @@
 # D365 Tools – Chrome Extension
-A powerful utility extension for Microsoft Dynamics 365 developers. This tool enhances the customization experience by adding helpful developer functions directly into the form UI. Compatible with On-premise (UCI) and Online enviroments.
+A powerful utility extension for Microsoft Dynamics 365 developers. This tool enhances the customization experience by adding helpful developer functions directly into the form UI. Compatible with On-premise (UCI and Classic) and Online enviroments.
 
 ## 🚀 Features
 
@@ -32,6 +32,12 @@ A powerful utility extension for Microsoft Dynamics 365 developers. This tool en
 
 - **Show Tabs On Form**  
   View all tabs on the form and navigate to one by clicking its name.
+
+- **Delete Record**  
+  Delete current record for enviroments in which OOB Delete Button is hidden in Application Ribbon.
+
+- **Set Field Value**  
+  Set values for fields using its schema name. Useful for setting values for fields not on form.
 
 
 

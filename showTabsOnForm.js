@@ -1,6 +1,7 @@
 (async function waitForXrm(attempts = 10) {
     if (typeof Xrm !== "undefined" && Xrm.Page && Xrm.Page.getAttribute) {
         try {
+            Xrm = getXRM();
             if (Xrm.Page.data) {
                 showTabSelectorOverlay();
             }
@@ -16,6 +17,25 @@
         alert("❌ Xrm never became available. Make sure you're on a record form.");
     }
 })();
+
+function getXRM() {
+    if (isUCI()) {
+        return window.Xrm;
+    }
+    else {
+        return $("iframe").filter(function () {
+            return $(this).css("visibility") == "visible"
+        })[0].contentWindow.Xrm;
+    }
+}
+
+function isUCI() {
+    var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
+    if (baseUrl.includes("appid"))
+        return true;
+    else
+        false;
+}
 
 function focusOnTab(tab) {
     tab.setVisible(true);
@@ -91,6 +111,7 @@ function showTabSelectorOverlay() {
             margin: "6px 0",
             padding: "10px",
             width: "100%",
+            height:"auto",
             textAlign: "left",
             border: "1px solid #ccc",
             background: "#f5f5f5",

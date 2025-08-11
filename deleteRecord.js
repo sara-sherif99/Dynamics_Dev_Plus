@@ -3,7 +3,7 @@
         try {
             Xrm = getXRM();
             if (Xrm.Page.data) {
-                getSecurityRoles();
+                showOverlay(deleteRecord);
             }
             else {
                 alert("❌ Make sure you're on a record form.");
@@ -37,51 +37,21 @@ function isUCI() {
         false;
 }
 
-async function getSecurityRoles() {
-    var reocrdId = Xrm.Page.data.entity.getId().replace("{", "").replace("}", "");
-    var entityName = Xrm.Page.data.entity.getEntityName();
+function deleteRecord() {
+    Xrm.WebApi.deleteRecord(Xrm.Page.data.entity.getEntityName(),  Xrm.Page.data.entity.getId()).then(
 
-    if (entityName == "team" || entityName == "systemuser") {
-        await Xrm.WebApi.retrieveMultipleRecords(entityName, `?$filter=${entityName}id eq ${reocrdId}&$expand=${entityName}roles_association($select=name)`).then(
-            function success(result) {
-                var securityRoles = entityName == "systemuser" ? result.entities[0].systemuserroles_association : result.entities[0].teamroles_association;
-                if (securityRoles.length > 0) {
-                    var msg = `✅ Security Roles:\n\n`;
-                    for (var i = 0; i < securityRoles.length; i++) {
-                        msg += securityRoles[i].name + "\n";
-                    }
-                    showOverlay(msg, entityName, reocrdId, goToManageRoles)
-                } else {
-                    alert("❌ This User/Team does not have and Security Role assigned to it");
-                }
-            },
-            function (error) {
-                console.log(error.message);
-            }
-        );
-    }
-    else {
-        alert("❌ Security Roles can be assigned to Users or Teams only");
-    }
-}
+    function success(result) {
+    },
+    function (error) {
 
-function goToManageRoles(isOnPremises, entityName, recordId) {
-    if (isOnPremises) {
-        var url = Xrm.Utility.getGlobalContext().getClientUrl() +
-            `/main.aspx?etn=${entityName}&pagetype=entityrecord&id=${encodeURIComponent(recordId)}`;
-        window.open(url, "_blank");
+        console.error("Error deleting record: " + error.message);
+
     }
-    else {
-        const envId = Xrm.Utility.getGlobalContext().organizationSettings.organizationId;
-        const tenantId = Xrm.Utility.getGlobalContext().organizationSettings.bapEnvironmentId;
-        var url = entityName == 'team' ? `teams` : `${tenantId}/users`;
-        var targetUrl = `https://admin.powerplatform.microsoft.com/settingredirect/${envId}/${url}`
-        window.open(targetUrl, "_blank");
-    }
+);
 
 }
 
-function showOverlay(msg, entityName, recordId, onConfirm) {
+function showOverlay(onConfirm) {
     const existingBox = document.getElementById("d365-overlay-box");
     const existingBackdrop = document.getElementById("d365-overlay-backdrop");
     if (existingBox) existingBox.remove();
@@ -135,7 +105,7 @@ function showOverlay(msg, entityName, recordId, onConfirm) {
     overlay.appendChild(closeBtn);
 
     const messageDiv = document.createElement("div");
-    messageDiv.textContent = msg;
+    messageDiv.textContent = "Delete This Record?";
     Object.assign(messageDiv.style, {
         fontSize: "16px",
         color: "#333",
@@ -150,28 +120,24 @@ function showOverlay(msg, entityName, recordId, onConfirm) {
         textAlign: "center"
     });
 
-    if (isUCI()) {
-        const manageRolesBtn = document.createElement("button");
-        manageRolesBtn.textContent = "Manage Roles";
-        Object.assign(manageRolesBtn.style, {
-            padding: "8px 16px",
-            backgroundColor: "#508C9B",
-            color: "#fff",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            marginTop: "20px"
-        });
-        const isOnPremises = Xrm.Utility.getGlobalContext().isOnPremises();
-        manageRolesBtn.onclick = () => {
-            onConfirm(isOnPremises, entityName, recordId);
-            overlay.remove();
-            backdrop.remove();
-        };
+    const deleteRecordBtn = document.createElement("button");
+    deleteRecordBtn.textContent = "Delete Record";
+    Object.assign(deleteRecordBtn.style, {
+        padding: "8px 16px",
+        backgroundColor: "#508C9B",
+        color: "#fff",
+        border: "none",
+        borderRadius: "4px",
+        cursor: "pointer",
+        marginTop: "20px"
+    });
+    deleteRecordBtn.onclick = () => {
+        onConfirm();
+        overlay.remove();
+        backdrop.remove();
+    };
 
-        btnContainer.appendChild(manageRolesBtn);
-    }
-
+    btnContainer.appendChild(deleteRecordBtn);
 
     overlay.appendChild(btnContainer);
 

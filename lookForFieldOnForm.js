@@ -1,6 +1,7 @@
 (async function waitForXrm(attempts = 10) {
   if (typeof Xrm !== "undefined" && Xrm.Page && Xrm.Page.getAttribute) {
     try {
+      Xrm = getXRM();
       if (Xrm.Page.data) {
         showOverlayWithInput("Enter Field Schema Name",
           focusOnField
@@ -18,6 +19,25 @@
     alert("❌ Xrm never became available. Make sure you're on a record form.");
   }
 })();
+
+function getXRM() {
+    if (isUCI()) {
+        return window.Xrm;
+    }
+    else {
+        return $("iframe").filter(function () {
+            return $(this).css("visibility") == "visible"
+        })[0].contentWindow.Xrm;
+    }
+}
+
+function isUCI() {
+    var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
+    if (baseUrl.includes("appid"))
+        return true;
+    else
+        false;
+}
 
 function focusOnField(fieldName) {
   const formContext = Xrm.Page;
@@ -44,7 +64,7 @@ function focusOnField(fieldName) {
   const intervalId = setInterval(() => {
     try {
       const input = document.querySelector(
-        `[data-id="${fieldName}"] input, [data-id="${fieldName}"] select, [data-id="${fieldName}"] textarea`
+        `[data-id="${fieldName}"] input, [data-id="${fieldName}"] select, [data-id="${fieldName}"] textarea, [data-id="${fieldName}"] div`
       );
 
       if (input) {

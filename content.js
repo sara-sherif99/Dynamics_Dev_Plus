@@ -157,3 +157,35 @@ document.getElementById("showTabsOnForm").addEventListener("click", async () => 
       }
     });
 });
+
+document.getElementById("deleteRecord").addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const script = document.createElement("script");
+        script.src = chrome.runtime.getURL("deleteRecord.js");
+        script.onload = function () {
+          this.remove();
+        };
+        (document.head || document.documentElement).appendChild(script);
+      }
+    });
+});
+
+document.getElementById("setFieldValue").addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const script = document.createElement("script");
+        script.src = chrome.runtime.getURL("setFieldValue.js");
+        script.onload = function () {
+          this.remove();
+        };
+        (document.head || document.documentElement).appendChild(script);
+      }
+    });
+});
