@@ -1,4 +1,4 @@
-# D365 Tools – Chrome Extension
+# Dynamics Dev + – Chrome Extension
 A powerful utility extension for Microsoft Dynamics 365 developers. This tool enhances the customization experience by adding helpful developer functions directly into the form UI. Compatible with On-premise (UCI and Classic) and Online enviroments.
 
 ## 🚀 Features
@@ -43,4 +43,4 @@ A powerful utility extension for Microsoft Dynamics 365 developers. This tool en
 
 ## 🧪 Compatibility
 
-- Works with Dynamics 365 Online and On-Premise (Unified Interface).
+- Works with Dynamics 365 Online and On-Premise (Unified Interface and Classic).
