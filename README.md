@@ -49,4 +49,4 @@ A powerful utility extension for Microsoft Dynamics 365 developers. This tool en
 
 ## 🧪 Compatibility
 
-- Works with Dynamics 365 Online and On-Premise (Unified Interface).
+- Works with Dynamics 365 Online and On-Premise (Unified Interface and Classic).
