@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Dynamics Dev +",
-    "version": "2.0",
+    "version": "2.1",
     "description": "Performs quick actions in Dynamics 365",
     "permissions": [
         "scripting",
