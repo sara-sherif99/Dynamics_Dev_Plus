@@ -1,4 +1,4 @@
-# D365 Tools – Chrome Extension
+# Dynamics Dev + – Chrome Extension
 A powerful utility extension for Microsoft Dynamics 365 developers. This tool enhances the customization experience by adding helpful developer functions directly into the form UI. Compatible with On-premise (UCI and Classic) and Online enviroments.
 
 ## 🚀 Features
@@ -38,6 +38,12 @@ A powerful utility extension for Microsoft Dynamics 365 developers. This tool en
 
 - **Set Field Value**  
   Set values for fields using its schema name. Useful for setting values for fields not on form.
+
+- **Show Record Dependencies**  
+  Detect and list all workflows, business processes, business rules, and actions that include a given record in their configuration or logic.
+
+- **Show Field Translations**  
+  Retrieve all localized display names for fields across languages configured in the environment.
 
 
 

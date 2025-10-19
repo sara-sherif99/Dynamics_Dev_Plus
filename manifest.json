@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
-    "name": "D365 Extension",
-    "version": "1.1",
+    "name": "Dynamics Dev +",
+    "version": "2.0",
     "description": "Performs quick actions in Dynamics 365",
     "permissions": [
         "scripting",
@@ -28,7 +28,9 @@
                 "showSecurityRoles.js",
                 "showTabsOnForm.js",
                 "deleteRecord.js",
-                "setFieldValue.js"
+                "setFieldValue.js",
+                "showRecordDependencies.js",
+                "showFieldTranslations.js"
             ],
             "matches": [
                 "<all_urls>"

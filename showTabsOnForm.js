@@ -60,43 +60,57 @@ function showTabSelectorOverlay() {
     });
 
     const overlay = document.createElement("div");
-    overlay.id = "d365-tab-overlay";
+    overlay.id = "d365-overlay-box";
     Object.assign(overlay.style, {
         position: "fixed",
         top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-        backgroundColor: "#fff",
-        padding: "20px",
+        background: "#ffffff",
+        color: "#333",
+        padding: "0px 30px 30px 30px",
         borderRadius: "8px",
         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-        zIndex: "9999",
+        fontSize: "16px",
         fontFamily: "Segoe UI, Arial, sans-serif",
+        maxWidth: "90vw",
         maxHeight: "80vh",
         overflowY: "auto",
-        minWidth: "300px"
+        zIndex: "9999",
+        textAlign: "left"
+    });
+
+    const headerRow = document.createElement("div");
+    Object.assign(headerRow.style, {
+        position: "sticky",
+        top: "0",
+        background: "#fff",
+        padding: "10px 0px",
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        zIndex: "10000"
     });
 
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "✖";
     Object.assign(closeBtn.style, {
-        position: "absolute",
-        top: "10px",
-        right: "10px",
         background: "transparent",
         border: "none",
         color: "#666",
         fontSize: "18px",
-        cursor: "pointer",
+        cursor: "pointer"
     });
     closeBtn.onclick = () => {
         overlay.remove();
         backdrop.remove();
     };
-    overlay.appendChild(closeBtn);
+
+    headerRow.appendChild(closeBtn);
+    overlay.appendChild(headerRow);
 
     const header = document.createElement("h3");
     header.textContent = "Select a Tab";
     header.style.marginBottom = "12px";
-    header.style.color = "#134B70";
+    header.style.color = "#508C9B";
     overlay.appendChild(header);
 
     const tabs = formContext.ui.tabs.get();

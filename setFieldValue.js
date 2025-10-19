@@ -127,24 +127,33 @@ function showOverlayWithInputs(onConfirm) {
         top: "50%", left: "50%", transform: "translate(-50%, -50%)",
         background: "#ffffff",
         color: "#333",
-        padding: "40px",
+        padding: "0px 30px 30px 30px",
         borderRadius: "8px",
         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-        fontSize: "18px",
+        fontSize: "16px",
         fontFamily: "Segoe UI, Arial, sans-serif",
-        maxWidth: "600px",
+        maxWidth: "90vw",
         maxHeight: "80vh",
         overflowY: "auto",
         zIndex: "9999",
         textAlign: "left"
     });
 
+    const headerRow = document.createElement("div");
+    Object.assign(headerRow.style, {
+        position: "sticky",
+        top: "0",
+        background: "#fff",
+        padding: "10px 0px",
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        zIndex: "10000"
+    });
+
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "✖";
     Object.assign(closeBtn.style, {
-        position: "absolute",
-        top: "10px",
-        right: "10px",
         background: "transparent",
         border: "none",
         color: "#666",
@@ -155,7 +164,9 @@ function showOverlayWithInputs(onConfirm) {
         overlay.remove();
         backdrop.remove();
     };
-    overlay.appendChild(closeBtn);
+
+    headerRow.appendChild(closeBtn);
+    overlay.appendChild(headerRow);
 
     const firstField = document.createElement("div");
     firstField.textContent = "Field Schema Name";

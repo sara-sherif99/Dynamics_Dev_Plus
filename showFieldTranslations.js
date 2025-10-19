@@ -6,7 +6,7 @@
                 var fieldsArray = GetFieldsOnForm();
                 showFieldSelectionOverlay(
                     fieldsArray,
-                    getFieldMetadata
+                    getFieldTranslations
                 )
             }
             else {
@@ -59,63 +59,15 @@ function GetFieldsOnForm() {
     }));
 }
 
-async function getFieldMetadata(attribute) {
+async function getFieldTranslations(attribute) {
     var entityName = Xrm.Page.data.entity.getEntityName();
     var schemaName = attribute.getName();
 
-    if (isUCI()) {
-        return getMetaDataInUCI(entityName, schemaName);
-    }
-    else {
-        return getMetaDataInClassic(entityName, schemaName);
-    }
+    return getMetaData(entityName, schemaName);
 }
 
-async function getMetaDataInUCI(entityName, schemaName) {
-    var fieldMetaData;
-    await Xrm.Utility.getEntityMetadata(entityName, [schemaName])
-        .then(function (metadata) {
-            const fieldData = metadata.Attributes.get(schemaName);
-            const type = fieldData.attributeDescriptor.Type;
-
-            const AttributeRequiredLevelCodeName = Object.entries(AttributeRRequiredLevelCode).reduce((acc, [key, value]) => {
-                acc[value] = key;
-                return acc;
-            }, {});
-            const requiredLevel = AttributeRequiredLevelCodeName[fieldData.attributeDescriptor.RequiredLevel].replace("_", " ");
-
-
-            fieldMetaData = `Schema Name: ${schemaName}\n`;
-            fieldMetaData += `Type: ${type}\n`;
-            fieldMetaData += `Required: ${requiredLevel}\n`;
-
-            if (type === "lookup")
-                fieldMetaData += `Related Entity: ${fieldData.Targets.join("\n")}`;
-
-            else if (type === "picklist") {
-                const options = fieldData.OptionSet;
-                fieldMetaData += `Options:\n`;
-                Object.values(options).forEach(opt => {
-                    fieldMetaData += `- ${opt.text} (${opt.value})\n`;
-                });
-            }
-            else if (type == "multiselectpicklist" || type == "state" || type == "status") {
-                const options = fieldData.attributeDescriptor.OptionSet;
-                fieldMetaData += `Options:\n`;
-                Object.values(options).forEach(opt => {
-                    fieldMetaData += `- ${opt.Label} (${opt.Value})\n`;
-                });
-            }
-        })
-        .catch(function (error) {
-            console.error("Metadata fetch error:", error.message);
-        });
-
-    return fieldMetaData;
-}
-
-async function getMetaDataInClassic(entityName, schemaName) {
-    var fieldMetaData;
+async function getMetaData(entityName, schemaName) {
+    var fieldTransltions;
     var path = `${Xrm.Utility.getGlobalContext().getClientUrl()}/api/data/v9.1/EntityDefinitions(LogicalName='${entityName}')/Attributes(LogicalName='${schemaName}')`;
     try {
         var response = await fetch(path, {
@@ -129,58 +81,22 @@ async function getMetaDataInClassic(entityName, schemaName) {
         });
 
         var result = await response.json();
-        var type = result.AttributeType;
-        fieldMetaData = `Schema Name: ${result.LogicalName}\n`;
-        fieldMetaData += `Type: ${type}\n`;
-        fieldMetaData += `Required: ${result.RequiredLevel.Value}\n`;
+        const translations = result.DisplayName?.LocalizedLabels?.map(l => ({
+            label: l.Label,
+            language: l.LanguageCode
+        })) || [];
 
-        if (type === "Lookup")
-            fieldMetaData += `Related Entity: ${result.Targets.join("\n")}`;
+        fieldTransltions = `Field Translations:\n`;
+        Object.values(translations).forEach(trns => {
+            fieldTransltions += `- ${trns.language}: "${trns.label}"\n`;
+        });
 
-        else if (type === "Picklist") {
-            fieldMetaData += `Options:\n`;
-            fieldMetaData += await GetOptions(entityName,schemaName,'PicklistAttributeMetadata');
-        }
-        else if (type == "Virtual") {
-            fieldMetaData += `Options:\n`;
-            fieldMetaData += await GetOptions(entityName,schemaName,'MultiSelectPicklistAttributeMetadata');
-        }
-        else if (type == "State") {
-            fieldMetaData += `Options:\n`;
-            fieldMetaData += await GetOptions(entityName,schemaName,'StateAttributeMetadata');
-        }
-        else if(type == "Status") {
-            fieldMetaData += `Options:\n`;
-            fieldMetaData += await GetOptions(entityName,schemaName,'StatusAttributeMetadata');            
-        }
     }
     catch (error) {
         console.error("Error retrieving field metadata:", error);
         throw error;
     }
-    return fieldMetaData;
-}
-
-async function GetOptions(entityName, schemaName, fieldType) {
-    var response = await fetch(
-        `${Xrm.Utility.getGlobalContext().getClientUrl()}/api/data/v9.1/EntityDefinitions(LogicalName='${entityName}')/Attributes(LogicalName='${schemaName}')/Microsoft.Dynamics.CRM.${fieldType}?$select=LogicalName&$expand=OptionSet,GlobalOptionSet`
-        , {
-            method: "GET",
-            headers: {
-                "OData-MaxVersion": "4.0",
-                "OData-Version": "4.0",
-                "Accept": "application/json",
-                "Content-Type": "application/json; charset=utf-8"
-            }
-        });
-
-    var result = await response.json();
-    const options = result.OptionSet.Options;
-    var optionsText = "";
-    Object.values(options).forEach(opt => {
-        optionsText += `- ${opt.Label.LocalizedLabels[0].Label} (${opt.Value})\n`;
-    });
-    return optionsText;
+    return fieldTransltions;
 }
 
 async function showFieldSelectionOverlay(fieldsArray, onclick) {
@@ -245,7 +161,7 @@ async function showFieldSelectionOverlay(fieldsArray, onclick) {
 
     headerRow.appendChild(closeBtn);
     overlay.appendChild(headerRow);
-    
+
 
     const groupedByTab = {};
     fieldsArray.forEach(field => {
@@ -353,7 +269,7 @@ function showMetadataOverlay(metadata, fieldLabel) {
     overlay.appendChild(closeBtn);
 
     const heading = document.createElement("h2");
-    heading.textContent = `Field Metadata: ${fieldLabel}`;
+    heading.textContent = `Field Translations: ${fieldLabel}`;
     Object.assign(heading.style, { margin: "12px", color: "#508C9B" });
     overlay.appendChild(heading);
 
@@ -375,11 +291,3 @@ function showMetadataOverlay(metadata, fieldLabel) {
 
     document.body.appendChild(overlay);
 }
-
-var AttributeRRequiredLevelCode = {
-    Optional: 0,
-    System_Required: 1,
-    Business_Recommended: 3,
-    Business_Required: 2
-};
-

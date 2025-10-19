@@ -94,6 +94,22 @@ document.getElementById("cloneFieldsFromAnotherRecord").addEventListener("click"
     });
 });
 
+document.getElementById("showRecordDependencies").addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const script = document.createElement("script");
+        script.src = chrome.runtime.getURL("showRecordDependencies.js");
+        script.onload = function () {
+          this.remove();
+        };
+        (document.head || document.documentElement).appendChild(script);
+      }
+    });
+});
+
 document.getElementById("duplicaterecord").addEventListener("click", async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   
@@ -182,6 +198,22 @@ document.getElementById("setFieldValue").addEventListener("click", async () => {
       func: () => {
         const script = document.createElement("script");
         script.src = chrome.runtime.getURL("setFieldValue.js");
+        script.onload = function () {
+          this.remove();
+        };
+        (document.head || document.documentElement).appendChild(script);
+      }
+    });
+});
+
+document.getElementById("showFieldTranslations").addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const script = document.createElement("script");
+        script.src = chrome.runtime.getURL("showFieldTranslations.js");
         script.onload = function () {
           this.remove();
         };

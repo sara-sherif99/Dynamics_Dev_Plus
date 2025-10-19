@@ -44,7 +44,7 @@ async function getRealtimeProcessSessions(recordId) {
     var realtimeprocess;
     await Xrm.WebApi.retrieveMultipleRecords("processsession", `?$filter=_regardingobjectid_value eq ${recordId}`).then(
         function success(result) {
-            realtimeprocess =  result.entities.map(obj =>
+            realtimeprocess = result.entities.map(obj =>
             ({
                 ProcessName: obj["_processid_value@OData.Community.Display.V1.FormattedValue"],
                 StatusReason: obj["statuscode@OData.Community.Display.V1.FormattedValue"],
@@ -63,7 +63,7 @@ async function getBackgroundProcessSessions(recordId) {
     var bgProcesses;
     await Xrm.WebApi.retrieveMultipleRecords("asyncoperation", `?$filter=_regardingobjectid_value eq ${recordId}`).then(
         function success(result) {
-            bgProcesses =  result.entities.map(obj =>
+            bgProcesses = result.entities.map(obj =>
             ({
                 ProcessName: obj["name"],
                 StatusReason: obj["statuscode@OData.Community.Display.V1.FormattedValue"],
@@ -100,7 +100,7 @@ function showOverlayWithTables(title1, data1, title2, data2) {
         top: "50%", left: "50%", transform: "translate(-50%, -50%)",
         background: "#ffffff",
         color: "#333",
-        padding: "40px",
+        padding: "0px 30px 30px 30px",
         borderRadius: "8px",
         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
         fontSize: "16px",
@@ -112,12 +112,21 @@ function showOverlayWithTables(title1, data1, title2, data2) {
         textAlign: "left"
     });
 
+    const headerRow = document.createElement("div");
+    Object.assign(headerRow.style, {
+        position: "sticky",
+        top: "0",
+        background: "#fff",
+        padding: "10px 0px",
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        zIndex: "10000"
+    });
+
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "✖";
     Object.assign(closeBtn.style, {
-        position: "absolute",
-        top: "10px",
-        right: "10px",
         background: "transparent",
         border: "none",
         color: "#666",
@@ -129,7 +138,8 @@ function showOverlayWithTables(title1, data1, title2, data2) {
         backdrop.remove();
     };
 
-    overlay.appendChild(closeBtn);
+    headerRow.appendChild(closeBtn);
+    overlay.appendChild(headerRow);
 
     const container = document.createElement("div");
     Object.assign(container.style, {
@@ -160,6 +170,10 @@ function createTable(title, data, realtimeprocess) {
 
     const heading = document.createElement("h3");
     heading.textContent = title;
+    Object.assign(heading.style, {
+        marginBottom: "10px",
+        color: "#508C9B"
+    });
     section.appendChild(heading);
 
     const table = document.createElement("table");
@@ -240,7 +254,7 @@ function createEmptyTable(title, message) {
     titleEl.textContent = title;
     Object.assign(titleEl.style, {
         marginBottom: "10px",
-        color: "#134B70"
+        color: "#508C9B"
     });
 
     const emptyMsg = document.createElement("div");

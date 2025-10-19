@@ -107,26 +107,33 @@ function showFieldSelectionOverlay(fieldsArray, onConfirm) {
         top: "50%", left: "50%", transform: "translate(-50%, -50%)",
         background: "#ffffff",
         color: "#333",
-        padding: "24px",
+        padding: "0px 30px 30px 30px",
         borderRadius: "8px",
         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
         fontSize: "16px",
         fontFamily: "Segoe UI, Arial, sans-serif",
-        maxWidth: "700px",
+        maxWidth: "90vw",
         maxHeight: "80vh",
-        width: "500px",
         overflowY: "auto",
         zIndex: "9999",
-        textAlign: "left",
-        boxSizing: "border-box"
+        textAlign: "left"
+    });
+
+    const headerRow = document.createElement("div");
+    Object.assign(headerRow.style, {
+        position: "sticky",
+        top: "0",
+        background: "#fff",
+        padding: "10px 0px",
+        display: "flex",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        zIndex: "10000"
     });
 
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "✖";
     Object.assign(closeBtn.style, {
-        position: "absolute",
-        top: "10px",
-        right: "10px",
         background: "transparent",
         border: "none",
         color: "#666",
@@ -137,14 +144,16 @@ function showFieldSelectionOverlay(fieldsArray, onConfirm) {
         overlay.remove();
         backdrop.remove();
     };
-    overlay.appendChild(closeBtn);
+
+    headerRow.appendChild(closeBtn);
+    overlay.appendChild(headerRow);
 
     const idLabel = document.createElement("label");
     idLabel.textContent = "Source Record ID";
     Object.assign(idLabel.style, {
         display: "block",
         marginBottom: "6px",
-        color: "#134B70",
+        color: "#508C9B",
         fontWeight: "bold"
     });
 
@@ -208,7 +217,7 @@ function showFieldSelectionOverlay(fieldsArray, onConfirm) {
             display: "block",
             marginTop: "12px",
             marginBottom: "6px",
-            color: "#134B70"
+            color: "#508C9B"
         });
         fieldList.appendChild(tabHeader);
 
