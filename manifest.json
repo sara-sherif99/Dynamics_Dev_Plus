@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Dynamics Dev +",
-    "version": "2.1",
+    "version": "2.2",
     "description": "Performs quick actions in Dynamics 365",
     "permissions": [
         "scripting",
@@ -10,6 +10,9 @@
     "host_permissions": [
         "*://*.dynamics.com/*"
     ],
+    "icons": {
+        "48": "icon.png"
+    },
     "action": {
         "default_popup": "popup.html",
         "default_icon": "icon.png"
@@ -29,8 +32,10 @@
                 "showTabsOnForm.js",
                 "deleteRecord.js",
                 "setFieldValue.js",
-                "showRecordDependencies.js",
-                "showFieldTranslations.js"
+                "showRecordOrAssemblyDependencies.js",
+                "showFieldTranslations.js",
+                "findRecordByFieldValue.js",
+                "openSolution.js"
             ],
             "matches": [
                 "<all_urls>"

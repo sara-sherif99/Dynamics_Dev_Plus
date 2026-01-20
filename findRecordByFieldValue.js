@@ -1,9 +1,7 @@
 (async function waitForXrm(attempts = 10) {
     if (typeof Xrm !== "undefined" && Xrm.Page && Xrm.Page.getAttribute) {
         try {
-            showOverlayWithInput("Enter Record ID",
-                getProcessesContainsThisRecord
-            )
+            showOverlayWithInputs(FindRecordByFieldValue)
         } catch (e) {
             alert("❌ Script error: " + e.message);
         }
@@ -14,17 +12,6 @@
     }
 })();
 
-function getXRM() {
-    if (isUCI()) {
-        return window.Xrm;
-    }
-    else {
-        return $("iframe").filter(function () {
-            return $(this).css("visibility") == "visible"
-        })[0].contentWindow.Xrm;
-    }
-}
-
 function isUCI() {
     var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
     if (baseUrl.includes("appid"))
@@ -33,28 +20,28 @@ function isUCI() {
         false;
 }
 
-async function getProcessesContainsThisRecord(recordId) {
-    var processes;
-    showLoader("Fetching dependent processes...");
-    await Xrm.WebApi.retrieveMultipleRecords("workflow", `?$filter=contains(xaml,'${recordId}') and _parentworkflowid_value eq null&$select=name,category`).then(
-        function success(result) {
-            processes = result.entities.map(obj =>
-            ({
-                ProcessName: obj["name"],
-                ProcessCategory: obj["category@OData.Community.Display.V1.FormattedValue"],
-                ProcessId: obj["workflowid"]
-            })
-            );
-        },
-        function (error) {
-            console.log(error.message);
-        }
-    );
-    hideLoader();
-    showOverlayWithTables("✅ Dependent Processes", processes)
+async function FindRecordByFieldValue(entitySchemaName, fieldSchemaName, fieldValue) {
+    try {
+        var nameFieldSchemaName = entitySchemaName.split("_")[0] + "_name";
+        Xrm.WebApi.retrieveMultipleRecords(
+            entitySchemaName,
+            `?$select=${entitySchemaName}id,${nameFieldSchemaName}&$filter=${fieldSchemaName} eq '${fieldValue}'`
+        ).then(
+            async function (result) {
+                await showOverlayWithTables("Find Record By Field Value:", result.entities, entitySchemaName, nameFieldSchemaName);
+            },
+            function (error) {
+                console.log(error.message);
+            }
+        );
+
+    } catch (err) {
+        alert(`❌ Error in finding record: ${err.message}`);
+    }
 }
 
-function showOverlayWithInput(promptMsg, onConfirm) {
+
+function showOverlayWithInputs(onConfirm) {
     const existingBox = document.getElementById("d365-overlay-box");
     const existingBackdrop = document.getElementById("d365-overlay-backdrop");
     if (existingBox) existingBox.remove();
@@ -117,13 +104,13 @@ function showOverlayWithInput(promptMsg, onConfirm) {
     headerRow.appendChild(closeBtn);
     overlay.appendChild(headerRow);
 
-    const messageDiv = document.createElement("div");
-    messageDiv.textContent = promptMsg;
-    overlay.appendChild(messageDiv);
+    const firstField = document.createElement("div");
+    firstField.textContent = "Entity Schema Name";
+    overlay.appendChild(firstField);
 
-    const input = document.createElement("input");
-    input.type = "text";
-    Object.assign(input.style, {
+    const firstInput = document.createElement("input");
+    firstInput.type = "text";
+    Object.assign(firstInput.style, {
         width: "100%",
         fontSize: "16px",
         color: "#333",
@@ -136,7 +123,50 @@ function showOverlayWithInput(promptMsg, onConfirm) {
         borderRadius: "4px"
     });
 
-    overlay.appendChild(input);
+    overlay.appendChild(firstInput);
+
+    const secondField = document.createElement("div");
+    secondField.textContent = "Field Schema Name";
+    overlay.appendChild(secondField);
+
+    const secondInput = document.createElement("input");
+    secondInput.type = "text";
+    Object.assign(secondInput.style, {
+        width: "100%",
+        fontSize: "16px",
+        color: "#333",
+        fontFamily: "Segoe UI, Arial, sans-serif",
+        padding: "12px",
+        marginTop: "16px",
+        marginBottom: "24px",
+        boxSizing: "border-box",
+        border: "1px solid #ccc",
+        borderRadius: "4px"
+    });
+
+    overlay.appendChild(secondInput);
+
+
+    const ThirdField = document.createElement("div");
+    ThirdField.textContent = "Field Value";
+    overlay.appendChild(ThirdField);
+
+    const ThirdInput = document.createElement("input");
+    ThirdInput.type = "text";
+    Object.assign(ThirdInput.style, {
+        width: "100%",
+        fontSize: "16px",
+        color: "#333",
+        fontFamily: "Segoe UI, Arial, sans-serif",
+        padding: "12px",
+        marginTop: "16px",
+        marginBottom: "24px",
+        boxSizing: "border-box",
+        border: "1px solid #ccc",
+        borderRadius: "4px"
+    });
+
+    overlay.appendChild(ThirdInput);
 
     const btnContainer = document.createElement("div");
     Object.assign(btnContainer.style, {
@@ -154,9 +184,11 @@ function showOverlayWithInput(promptMsg, onConfirm) {
         cursor: "pointer"
     });
     okBtn.onclick = () => {
-        const value = input.value.trim();
-        if (value) {
-            onConfirm(value);
+        const entitySchemaName = firstInput.value.trim();
+        const fieldSchemaName = secondInput.value.trim();
+        const fieldValue = ThirdInput.value.trim();
+        if (entitySchemaName && fieldSchemaName && fieldValue) {
+            onConfirm(entitySchemaName, fieldSchemaName, fieldValue);
             overlay.remove();
             backdrop.remove();
         } else {
@@ -171,7 +203,7 @@ function showOverlayWithInput(promptMsg, onConfirm) {
     document.body.appendChild(overlay);
 }
 
-function showOverlayWithTables(title, data) {
+async function showOverlayWithTables(title, data, entitySchemaName, nameFieldSchemaName) {
     const existingBox = document.getElementById("d365-overlay-box");
     const existingBackdrop = document.getElementById("d365-overlay-backdrop");
     if (existingBox) existingBox.remove();
@@ -244,15 +276,15 @@ function showOverlayWithTables(title, data) {
 
     container.appendChild(
         data.length > 0
-            ? createTable(title, data)
-            : createEmptyTable(title, "No Dependent Processes")
+            ? await createTable(title, data, entitySchemaName, nameFieldSchemaName)
+            : createEmptyTable(title, "Record was not found!")
     );
 
     overlay.appendChild(container);
     document.body.appendChild(backdrop);
     document.body.appendChild(overlay);
 }
-function createTable(title, data) {
+async function createTable(title, data, entitySchemaName, nameFieldSchemaName) {
     const section = document.createElement("div");
 
     const heading = document.createElement("h3");
@@ -273,55 +305,46 @@ function createTable(title, data) {
     if (data.length > 0) {
         const thead = document.createElement("thead");
         const headRow = document.createElement("tr");
-        Object.keys(data[0]).forEach(key => {
-            const th = document.createElement("th");
-            th.textContent = key;
-            Object.assign(th.style, {
-                border: "1px solid #ccc",
-                padding: "6px 12px",
-                backgroundColor: "#f5f5f5"
-            });
-            headRow.appendChild(th);
+        const th = document.createElement("th");
+        th.textContent = "Record Found";
+        Object.assign(th.style, {
+            border: "1px solid #ccc",
+            padding: "6px 12px",
+            backgroundColor: "#f5f5f5"
         });
+        headRow.appendChild(th);
         thead.appendChild(headRow);
         table.appendChild(thead);
 
         const tbody = document.createElement("tbody");
-        data.forEach(row => {
+        data.forEach(async row => {
             const tr = document.createElement("tr");
-            Object.entries(row).forEach(([key, val]) => {
-                const td = document.createElement("td");
+            const td = document.createElement("td");
 
-                if (key.toLowerCase().includes("name")) {
-                    const a = document.createElement("a");
-                    a.href = `sfa/workflow/edit.aspx?id=%7b${row.ProcessId}%7d`;
-
-                    a.textContent = val;
-                    Object.assign(a.style, {
-                        color: "#0078d4",
-                        textDecoration: "underline"
-                    });
-                    a.onclick = function (e) {
-                        e.preventDefault();
-                        window.open(
-                            a.href,
-                            "_blank",
-                            "width=800,height=600,resizable=yes,scrollbars=yes"
-                        );
-                    };
-                    td.appendChild(a);
-                }
-                else {
-                    td.textContent = val;
-                }
-
-                Object.assign(td.style, {
-                    border: "1px solid #ccc",
-                    padding: "6px 12px"
-                });
-
-                tr.appendChild(td);
+            const a = document.createElement("a");
+            a.href =  await CreateLink(entitySchemaName, row[`${entitySchemaName}id`]);
+            a.textContent = row[nameFieldSchemaName];
+            Object.assign(a.style, {
+                color: "#0078d4",
+                textDecoration: "underline"
             });
+            a.onclick = function (e) {
+                e.preventDefault();
+                window.open(
+                    a.href,
+                    "_blank",
+                    "width=800,height=600,resizable=yes,scrollbars=yes"
+                );
+            };
+            td.appendChild(a);
+
+
+            Object.assign(td.style, {
+                border: "1px solid #ccc",
+                padding: "6px 12px"
+            });
+
+            tr.appendChild(td);
             tbody.appendChild(tr);
         });
         table.appendChild(tbody);
@@ -358,59 +381,31 @@ function createEmptyTable(title, message) {
     return wrapper;
 }
 
-function showLoader(message = "Loading...") {
-    const existingLoader = document.getElementById("d365-loader");
-    if (existingLoader) return;
-
-    const loader = document.createElement("div");
-    loader.id = "d365-loader";
-    Object.assign(loader.style, {
-        position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100vw",
-        height: "100vh",
-        background: "rgba(0, 0, 0, 0.4)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: "10000",
-        color: "#fff",
-        fontSize: "18px",
-        fontFamily: "Segoe UI, Arial, sans-serif"
-    });
-
-    const spinner = document.createElement("div");
-    Object.assign(spinner.style, {
-        border: "5px solid #f3f3f3",
-        borderTop: "5px solid #508C9B",
-        borderRadius: "50%",
-        width: "40px",
-        height: "40px",
-        animation: "spin 1s linear infinite"
-    });
-
-    const text = document.createElement("div");
-    text.textContent = message;
-    text.style.marginTop = "10px";
-
-    loader.appendChild(spinner);
-    loader.appendChild(text);
-
-    document.body.appendChild(loader);
-
-    const style = document.createElement("style");
-    style.innerHTML = `
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    `;
-    document.head.appendChild(style);
+async function CreateLink(entitySchemaName, recordId) {
+    if (isUCI()) {
+        var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
+        if (!baseUrl.includes("appid")) {
+            baseUrl += `/main.aspx?appid=${await GetAnyAppID()}`;
+        } 
+        return baseUrl + `&newWindow=true&etn=${entitySchemaName}&id=${recordId.replace("{", "").replace("}", "")}&pagetype=entityrecord`;
+    } 
+    else {
+        return Xrm.Page.context.getClientUrl() + `/main.aspx?etn=${entitySchemaName}&id=${recordId.replace("{", "").replace("}", "")}&pagetype=entityrecord`;
+    }
 }
 
-function hideLoader() {
-    const loader = document.getElementById("d365-loader");
-    if (loader) loader.remove();
+async function GetAnyAppID() {
+    var appid;
+    await Xrm.WebApi.retrieveMultipleRecords("appmodule", "?$filter=statecode eq 0 and navigationtype eq 0 and clienttype eq 4 and appmoduleid ne null and name ne null")
+        .then(function (result) {
+            if (result.entities && result.entities.length > 0) {
+                appid = result.entities[0].appmoduleid;
+            } else {
+                appid = null;
+            }
+        })
+        .catch(function (error) {
+            console.error("Error retrieving app modules:", error.message);
+        });
+    return appid;
 }

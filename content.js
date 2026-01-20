@@ -94,14 +94,30 @@ document.getElementById("cloneFieldsFromAnotherRecord").addEventListener("click"
     });
 });
 
-document.getElementById("showRecordDependencies").addEventListener("click", async () => {
+document.getElementById("showRecordOrAssemblyDependencies").addEventListener("click", async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   
     chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
         const script = document.createElement("script");
-        script.src = chrome.runtime.getURL("showRecordDependencies.js");
+        script.src = chrome.runtime.getURL("showRecordOrAssemblyDependencies.js");
+        script.onload = function () {
+          this.remove();
+        };
+        (document.head || document.documentElement).appendChild(script);
+      }
+    });
+});
+
+document.getElementById("findRecordByFieldValue").addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const script = document.createElement("script");
+        script.src = chrome.runtime.getURL("findRecordByFieldValue.js");
         script.onload = function () {
           this.remove();
         };
@@ -214,6 +230,22 @@ document.getElementById("showFieldTranslations").addEventListener("click", async
       func: () => {
         const script = document.createElement("script");
         script.src = chrome.runtime.getURL("showFieldTranslations.js");
+        script.onload = function () {
+          this.remove();
+        };
+        (document.head || document.documentElement).appendChild(script);
+      }
+    });
+});
+
+document.getElementById("openSolution").addEventListener("click", async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+    chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const script = document.createElement("script");
+        script.src = chrome.runtime.getURL("openSolution.js");
         script.onload = function () {
           this.remove();
         };

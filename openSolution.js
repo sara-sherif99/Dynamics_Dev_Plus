@@ -1,8 +1,8 @@
 (async function waitForXrm(attempts = 10) {
     if (typeof Xrm !== "undefined" && Xrm.Page && Xrm.Page.getAttribute) {
         try {
-            showOverlayWithInput("Enter Entity Schema Name",
-                goToEntityList
+            showOverlayWithInput("Enter Solution Name",
+                openSolution
             )
         } catch (e) {
             alert("❌ Script error: " + e.message);
@@ -14,34 +14,30 @@
     }
 })();
 
-async function goToEntityList(entityschemaname, mode) {
-    if (mode == "uci") {
-        var baseUrl = Xrm.Utility.getGlobalContext().getCurrentAppUrl();
-        if (!baseUrl.includes("appid")) {
-            baseUrl += `/main.aspx?appid=${await GetAnyAppID()}`;
-        } 
-        var targetUrl = baseUrl + `&newWindow=true&pagetype=entitylist&etn=${entityschemaname}`
-        window.open(targetUrl, "_blank");
-    } else if (mode == "classic") {
-        var targetUrl = Xrm.Page.context.getClientUrl() + `/main.aspx?pagetype=entitylist&etn=${entityschemaname}`
-        window.open(targetUrl, "_blank");
+async function openSolution(solutionName) {
+    var solutionId = await getSolutionId(solutionName);
+    if (solutionId != "") {
+        window.open([
+            `${Xrm.Page.context.getClientUrl()}/tools/solution/edit.aspx?id=${solutionId}`,
+        ], "_blank", "width=800,height=600,resizable=yes,scrollbars=yes");
+    }
+    else{
+        alert("❌ Cannot find a solution with this name.");
     }
 }
 
-async function GetAnyAppID() {
-    var appid;
-    await Xrm.WebApi.retrieveMultipleRecords("appmodule", "?$filter=statecode eq 0 and navigationtype eq 0 and clienttype eq 4 and appmoduleid ne null and name ne null")
-        .then(function (result) {
-            if (result.entities && result.entities.length > 0) {
-                appid = result.entities[0].appmoduleid;
-            } else {
-                appid = null;
-            }
-        })
-        .catch(function (error) {
-            console.error("Error retrieving app modules:", error.message);
-        });
-    return appid;
+async function getSolutionId(solutionName) {
+    var solutionId = "";
+    await Xrm.WebApi.retrieveMultipleRecords("solution", `?$select=solutionid&$filter=friendlyname eq '${solutionName}'`).then(
+        function success(result) {
+            if (result && result.entities.length > 0)
+                solutionId = result.entities[0].solutionid;
+        },
+        function (error) {
+            console.log(error.message);
+        }
+    );
+    return solutionId;
 }
 
 function showOverlayWithInput(promptMsg, onConfirm) {
@@ -133,9 +129,9 @@ function showOverlayWithInput(promptMsg, onConfirm) {
         textAlign: "right"
     });
 
-    const uciBtn = document.createElement("button");
-    uciBtn.textContent = "UCI";
-    Object.assign(uciBtn.style, {
+    const btn = document.createElement("button");
+    btn.textContent = "Open";
+    Object.assign(btn.style, {
         padding: "8px 16px",
         backgroundColor: "#508C9B",
         color: "#fff",
@@ -144,10 +140,10 @@ function showOverlayWithInput(promptMsg, onConfirm) {
         cursor: "pointer",
         marginRight: "8px"
     });
-    uciBtn.onclick = () => {
+    btn.onclick = () => {
         const value = input.value.trim();
         if (value) {
-            onConfirm(value, "uci");
+            onConfirm(value);
             overlay.remove();
             backdrop.remove();
         } else {
@@ -155,36 +151,7 @@ function showOverlayWithInput(promptMsg, onConfirm) {
         }
     };
 
-    const classicBtn = document.createElement("button");
-    classicBtn.textContent = "Classic";
-    Object.assign(classicBtn.style, {
-        padding: "8px 16px",
-        backgroundColor: "#8dbac8",
-        color: "#fff",
-        border: "none",
-        borderRadius: "4px",
-        cursor: "pointer"
-    });
-    const isOnPremises = Xrm.Utility.getGlobalContext().isOnPremises();
-    if (isOnPremises == false) {
-        classicBtn.disabled = true;
-        classicBtn.style.backgroundColor = "#999";
-        classicBtn.style.cursor = "not-allowed";
-    }
-    classicBtn.onclick = () => {
-        if (classicBtn.disabled) return;
-        const value = input.value.trim();
-        if (value) {
-            onConfirm(value, "classic");
-            overlay.remove();
-            backdrop.remove();
-        } else {
-            alert("Please enter a value.");
-        }
-    };
-
-    btnContainer.appendChild(uciBtn);
-    btnContainer.appendChild(classicBtn);
+    btnContainer.appendChild(btn);
 
     overlay.appendChild(btnContainer);
 

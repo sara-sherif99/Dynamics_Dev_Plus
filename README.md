@@ -39,11 +39,14 @@ A powerful utility extension for Microsoft Dynamics 365 developers. This tool en
 - **Set Field Value**  
   Set values for fields using its schema name. Useful for setting values for fields not on form.
 
-- **Show Record Dependencies**  
-  Detect and list all workflows, business processes, business rules, and actions that include a given record in their configuration or logic.
+- **Show Record/Assembly Dependencies**  
+  Detect and list all workflows, business processes, business rules, and actions that include a given record id or assembly name used in their configuration or logic.
 
-- **Show Field Translations**  
-  Retrieve all localized display names for fields across languages configured in the environment.
+- **Find Record By Field Value**  
+  Search for records in entities given a field and a specific value of this field.
+
+- **Open Solution**  
+  Open solution directly using its display name.
 
 
 
